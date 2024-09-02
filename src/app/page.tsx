@@ -27,16 +27,32 @@ export default function Home() {
 
   const fetchArticles = async () => {
     setLoading(true)
-    const res = await fetch(`/api/articles?page=${page}&limit=10&search=${search}`)
-    const data = await res.json()
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      console.log(`正在请求：${apiUrl}/api/articles?page=${page}&limit=10&search=${search}`)
+      const res = await fetch(`${apiUrl}/api/articles?page=${page}&limit=10&search=${search}`)
+      if (!res.ok) {
+        throw new Error(`HTTP 错误！状态: ${res.status}`)
+      }
+      const data = await res.json()
+      console.log('收到的数据:', data)
 
-    const articlesWithTitles = data.articles.map((article: ArticleType) => ({
-      ...article,
-      title: article.title || article.content.substring(0, 50) + '...'  // 如果没有标题，使用内容的前50个字符
-    }))
+      if (!data.articles || !Array.isArray(data.articles)) {
+        throw new Error('收到的数据格式不正确')
+      }
 
-    setArticles(prev => [...prev, ...articlesWithTitles])
-    setLoading(false)
+      const articlesWithTitles = data.articles.map((article: ArticleType) => ({
+        ...article,
+        title: article.title || article.content.substring(0, 50) + '...'
+      }))
+
+      setArticles(prev => [...prev, ...articlesWithTitles])
+    } catch (error) {
+      console.error('获取文章时出错:', error)
+      // 这里可以添加错误处理，比如设置一个错误状态并在UI中显示
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -72,7 +88,7 @@ export default function Home() {
   };
 
   return (
-    // container 类通常用于包裹页面的主要内容，使得内容在较大屏幕上不至于显得太宽，同时在小屏幕上能够保持自适应和居中。
+    // container 通常用于包裹页面的主要内容，使得内容在较大屏幕上不至于显得太宽，同时在小屏幕上能够保持自适应和居中。
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Article List</h1>
       
@@ -121,7 +137,7 @@ export default function Home() {
                   rel="noopener noreferrer" 
                   className="text-blue-500 hover:text-blue-700 flex items-center space-x-1"
                   onClick={(e) => {
-                    e.stopPropagation(); // 阻止事件冒泡，防止触发卡片的点击事件
+                    e.stopPropagation(); // 阻止事件冒泡，防止触发卡的点击事件
                   }}
                 >
                   <span className="text-sm">查看原文</span>
