@@ -18,6 +18,7 @@ export default function Home() {
   const [ref, inView] = useInView();
   const [selectedArticle, setSelectedArticle] = useState<ArticleType | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
 
   const fetchArticlesData = useCallback(async (page: number, search: string, reset: boolean = false) => {
     setLoading(true);
@@ -44,12 +45,15 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    fetchArticlesData(1, search, true);
-  }, [search, fetchArticlesData]);
+    if (initialLoad) {
+      fetchArticlesData(page, search);
+      setInitialLoad(false);
+    }
+  }, [initialLoad, page, search, fetchArticlesData]);
 
   useEffect(() => {
     if (inView && !loading && hasMore) {
-      fetchArticlesData(page, search);
+      fetchArticlesData(page + 1, search);
       setPage((prev) => prev + 1);
     }
   }, [inView, loading, hasMore, page, search, fetchArticlesData]);
