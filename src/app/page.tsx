@@ -14,11 +14,12 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [hasMore, setHasMore] = useState(true); // 新增状态变量
   const [ref, inView] = useInView();
   const [selectedArticle, setSelectedArticle] = useState<ArticleType | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const fetchArticlesData = useCallback(async (page: number, search: string) => {
+  const fetchArticlesData = useCallback(async (page: number, search: string, reset: boolean = false) => {
     setLoading(true);
     try {
       const res = await fetch(`/api/proxy?page=${page}&limit=10&search=${search}`);
@@ -33,7 +34,8 @@ export default function Home() {
         ...article,
         title: article.title || article.content.substring(0, 50) + '...',
       }));
-      setArticles((prev) => [...prev, ...newArticles]);
+      setArticles((prev) => reset ? newArticles : [...prev, ...newArticles]);
+      setHasMore(data.articles.length > 0); // 更新 hasMore 状态
     } catch (error) {
       console.error('获取文章时出错:', error);
     } finally {
@@ -42,20 +44,22 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    fetchArticlesData(page, search);
-  }, [page, search, fetchArticlesData]);
+    fetchArticlesData(1, search, true);
+  }, [search, fetchArticlesData]);
 
   useEffect(() => {
-    if (inView) {
+    if (inView && !loading && hasMore) {
+      fetchArticlesData(page, search);
       setPage((prev) => prev + 1);
     }
-  }, [inView]);
+  }, [inView, loading, hasMore, page, search, fetchArticlesData]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setArticles([]);
-    setPage(1);
-    fetchArticlesData(1, search);
+    setArticles([]); // 清空现有数据
+    setPage(1); // 重置页码
+    setHasMore(true); // 重置 hasMore 状态
+    fetchArticlesData(1, search, true); // 只调用一次，并重置数据
   };
 
   const openModal = (article: ArticleType) => {
