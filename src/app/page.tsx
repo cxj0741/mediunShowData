@@ -28,7 +28,7 @@ export default function Home() {
   const fetchArticles = async () => {
     setLoading(true)
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://20.168.59.101:5000';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
       console.log(`正在请求：${apiUrl}/api/articles?page=${page}&limit=10&search=${search}`)
       const res = await fetch(`${apiUrl}/api/articles?page=${page}&limit=10&search=${search}`)
       if (!res.ok) {
